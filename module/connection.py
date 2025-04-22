@@ -2,21 +2,12 @@ import mysql.connector
 import pandas as pd
 import os
 
-
-# def get_connection():
-#     return mysql.connector.connect(
-#         host=os.getenv("DB_HOST", "localhost"),
-#         user=os.getenv("DB_USER", "root"),
-#         password=os.getenv("DB_PASSWORD", "Renuka@1973"),
-#         database=os.getenv("DB_NAME", "amber_solutions"),
-#         port=int(os.getenv("DB_PORT", 3306))
-#     )
 def get_connection():
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Renuka@1973",
-        database="amber_solutions",
+        host="13.232.218.220",
+        user="abneruser",
+        password="Abner@1234$Secure",
+        database="abner_common",
         port=3306
     )
 

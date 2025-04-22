@@ -1,0 +1,31 @@
+id,questions,favorite,count
+1,show me all the lead with their urgency,0,1
+2,What professions have the highest number of leads in the system?,0,1
+4,"How many quotations are in each status (e.g., Draft, Preview)?",0,1
+5,What is the average total cost of quotations in “Preview” vs “Draft” status?,0,2
+6,Which Key Account Manager has created the most quotations?,0,1
+7,Which leads have the highest total product price or total cost associated?,0,1
+8,What is the distribution of quotation_status across different urgency levels?,0,3
+9,Which lead codes have multiple quotation versions?,0,3
+10,What is the most common urgency level among leads?,0,2
+11,What is the average scope value (budget) for each urgency type (Hot/Warm/Cold)?,0,3
+12,Which combinations of creator_role and urgency have the highest quotation counts?,0,2
+13,"Are there any trends between quotation_created_by and the pricing values (e.g., packaging/transportation cost)?",0,1
+14,What is the proportion of packaging and transportation cost to total cost across quotations?,0,1
+15,Which quotations have unusually high or zero total_product_price but non-zero costs in other areas?,0,1
+16,"How many quotations have all pricing fields (total_product_price, packaging_cost, transportation_cost, total_cost) as zero?",0,1
+17,Are there duplicate quotations for the same lead?,0,1
+18,Are there inconsistencies in quotation values for the same lead code and creator?,1,3
+19,What is the total potential revenue (total_cost) from “Hot” leads?,0,2
+20,Which creator_mobile number has the highest cumulative quotation value?,0,1
+21,Is there a correlation between scope and total_product_price or total_cost?,0,2
+22,What is the frequency of quotation creation per creator?,0,2
+23,"How does category (e.g., Residential) affect the pricing and urgency?",0,1
+24,vfafebsdzf,0,1
+25,hello i am isha thakur,0,1
+26,hello my name is isha thakur,0,6
+27,hello my name is bla bla,0,3
+28,helogelo kxlzdk,0,49
+29,What professions have the highest number of leads in the sys,0,29
+30,,0,1
+31,Admin,0,71

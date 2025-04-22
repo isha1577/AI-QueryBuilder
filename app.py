@@ -1,127 +1,106 @@
-from dotenv import load_dotenv
-
-load_dotenv()
-
 import streamlit as st
-import os
-import sqlite3
-import google.generativeai as genai
-# import numpy as np
+import plotly.express as px
+import json
 import pandas as pd
+import streamlit_authenticator as stauth
 
-# genai.configure(api_key=my_api_key)
-genai.configure(api_key="AIzaSyC2ihGO4LEFAJ_FVuZrKgtGOEbu0bEFo7U")
+# 1. Define user credentials
+names = ['Alice', 'Bob']
+usernames = ['alice', 'bob']
+passwords = ['123', '456']  # In production, use environment variables or hashed passwords directly
 
+# 2. Hash the passwords
+hashed_passwords = stauth.Hasher(passwords).generate()
 
-# function to load google model to create sql query
-
-def get_gemini_response(question, prompt):
-    model = genai.GenerativeModel('models/gemini-1.5-pro-latest')
-    response = model.generate_content([prompt[0], question])
-    return response.text
-
-
-def read_sql_query(sql, db):
-    conn = sqlite3.connect(db)
-    cur = conn.cursor()
-    cur.execute(sql)
-    rows = cur.fetchall()
-    conn.commit()
-    conn.close()
-    for row in rows:
-        print(row)
-    return rows
-
-
-# prompt=[
-#     """
-#     You are an expert in converting English questions to SQL query!
-#     The SQL database student has 2 tables name PROJECT, SALES
-#     and PROJECT table has the following columns NAME, CLASS, SECTION and MARKS \n\nFor example,
-#     \nExample 1 How many entries of records are present
-#     the SQL command will be something like this SELECT COUNT(*) FROM STUDENT ;
-#     TECHERS table has the following columns NAME, CLASS and TECID \n\nFor example,
-#     \nExample 1 How many entries of records are present
-#     the SQL command will be something like this SELECT COUNT(*) FROM TEACHERS ;
-#     nExample 3 Tell me all the students studying in Data Science class?, the SQL command will be something
-#     like this SELECT * FROM STUDENT where CLASS="Data Science";
-#     nExample 4 Tell me teacher id  that teaches Chemistry class?, the SQL command will be something
-#     like this SELECT TECID FROM TEACHERS where CLASS="Chemistry";
-#
-#      the sql code should not have ```sql in beginning and ``` in the end
-#     DONT USE ```sql in beginning and ``` in end
-#     only give SQL QUERY TO EXECUTE
-#     """
-# ]
+# 3. Create the authenticator object
+authenticator = stauth.Authenticate(
+    credentials={
+        "usernames": {
+            usernames[0]: {
+                "name": names[0],
+                "password": hashed_passwords[0],
+            },
+            usernames[1]: {
+                "name": names[1],
+                "password": hashed_passwords[1],
+            },
+        }
+    },
+    cookie_name='some_cookie_name',
+    key='some_signature_key',
+    cookie_expiry_days=1
+)
 
 
-prompt = [
-    """
-YOU ARE AN EXPERT just Convert English questions to SQL queries:
-YOU ARE GIVEN SQL database company that have 4 tables  
-PROJECTS (project_id, company_id, name, start_date, end_date, status, budget)
-PROJECT_ASSIGNMENTS (assignment_id, project_id, employee_id, role, date_assigned)
-CLIENTS (client_id, company_id, name, contact_person, email, phone)
-SALES (sale_id, company_id, client_id, employee_id, amount, date)
-the questions will be something like this :
-Example 1: How many project records are present?
-and answer to be given in SQL query like this:
-SELECT COUNT(*) FROM PROJECTS;
+# 4. Login
+name, authentication_status, username = authenticator.login('Login', 'main')
 
-Example 2: How many sales transactions have been recorded?
-SELECT COUNT(*) FROM SALES;
+# 5. Display login status
+if authentication_status:
+    authenticator.logout('Logout', 'sidebar')
+    st.sidebar.success(f"Welcome {name}!")
 
-Example 3: Show all ongoing projects.
-SELECT * FROM PROJECTS WHERE status = 'Ongoing';
+    # Title
+    st.title("🗺️ Region-Based Sales Distribution (India Map)")
 
-Example 4: Get the names of clients associated with company ID 101.
-SELECT name FROM CLIENTS WHERE company_id = 101;
+    # Sample sales data
+    df = pd.DataFrame({
+        'state': [
+            'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+            'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
+            'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+            'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+            'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+            'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu and Kashmir',
+            'Ladakh'
+        ],
+        'sales': [
+            82000, 0, 45000, 72000, 38000, 99000, 58000, 100, 9100,
+            65000, 34000, 31000, 2900, 36000, 8700, 80000, 92000, 22000,
+            90, 31000, 600, 0, 0, 0, 0, 0, 0, 0, 23, 100, 0
+        ]
+    })
 
-     the sql code should not have ```sql in beginning and ``` in the end 
-    DONT USE ```sql in beginning and ``` in end 
-    only give SQL QUERY TO EXECUTE
-    """
-]
+    # Load India GeoJSON
+    try:
+        with open("india.geojson", "r") as f:
+            india_geojson = json.load(f)
+    except Exception as e:
+        st.error(f"Error loading GeoJSON: {e}")
+        st.stop()
 
-st.set_page_config(page_title="i can retrive any sql query")
-st.header("gemini app to retrieve SQL data")
+    # Normalize state names
+    state_id_map = {
+        feature["properties"]["st_nm"].strip().lower(): feature["properties"]["st_nm"]
+        for feature in india_geojson["features"]
+    }
 
-question = st.text_input("Input:", key="input")
+    df["state_lower"] = df["state"].str.strip().str.lower()
+    df["state_corrected"] = df["state_lower"].map(state_id_map)
 
-submit = st.button("Ask the question")
+    df_valid = df.dropna(subset=["state_corrected"])
 
-# if submit:
-#     response=get_gemini_response(question,prompt)
-#     print(response)
-#     # SELECT NAME from STUDENT   get the name from respose and set it as table header 
-#     data=read_sql_query(response,"student.db")
-#     st.subheader("The response is")
-#     if isinstance(data,list) and len(data)>0:
-#         df=pd.DataFrame(data)
-#         st.dataframe(df)
+    # Plot Choropleth Mapbox
+    fig = px.choropleth_mapbox(
+        df_valid,
+        geojson=india_geojson,
+        featureidkey="properties.st_nm",
+        locations="state_corrected",
+        color="sales",
+        color_continuous_scale="Inferno",
+        mapbox_style="carto-darkmatter",
+        zoom=2.5,
+        center={"lat": 22.9734, "lon": 78.6569},
+        opacity=0.8,
+        title="📊 Sales Distribution by State"
+    )
 
+    fig.update_geos(fitbounds="locations", visible=False)
 
-# for row in data:
-#     print(row)
-#     st.header(row)
+    st.plotly_chart(fig, use_container_width=True)
+    st.dataframe(df_valid[["state", "sales"]])
 
-if submit:
-    response = get_gemini_response(question, prompt)
-    st.write(f"**Generated SQL Query:** {response}")
-
-    # Fetch data from database
-    data = read_sql_query(response, "company.db")
-
-    if isinstance(data, list) and len(data) > 0:
-        df = pd.DataFrame(data)
-        st.subheader("Query Result:")
-        st.dataframe(df)
-
-        # Check if the data is numeric for visualization
-        if 1 in df.columns:
-            st.subheader("Bar Graph Representation:")
-            st.bar_chart(df.set_index(0)[1])  # Plot NAME vs MARKS
-        else:
-            st.write("No numerical data found to plot.")
-    else:
-        st.write("No data found.")
+elif authentication_status is False:
+    st.error("❌ Username/password is incorrect.")
+elif authentication_status is None:
+    st.warning("🔐 Please enter your username and password.")

@@ -9,7 +9,6 @@ load_dotenv()
 # --------------------------------------------SIDEBAR-------------------------------------------
 
 url = "http://localhost:8080/query"
-# SQL query you want to send
 payload = {
     "sqlQuery": f"select * from user"
 }
@@ -26,7 +25,7 @@ if response.status_code == 200:
 
     user_menu = st.sidebar.radio(
         'Select an Option',
-        ('KAM NAME', 'INVENTORY', 'REGION')
+        ('KAM NAME', 'QUOTATION', 'INVENTORY')
     )
     selected_qoutation = ''
 
@@ -59,7 +58,6 @@ if response.status_code == 200:
             print(product.columns)
             list = product['STATUS'].unique()
         selected_qoutation = st.sidebar.selectbox("Select Status", list)
-
 
         left_col, right_col = st.columns([2, 1])  # Wider left column
         sql1 = f"""SELECT 
@@ -145,7 +143,7 @@ if response.status_code == 200:
                 col1, col2, col3 = st.columns(3)
                 col1.metric("Total Revenue", str(number))
                 col2.metric("Total Orders", str(title_value1))
-                col3.metric("Quotations", str(title_value3))
+                col3.metric("Quotations Handled", str(title_value3))
                 unique_customers = [cust.strip().title() for cust in title_value2.split(",")]
                 st.markdown("### 🧑‍💼 Unique Customers")
                 for customer in unique_customers:
@@ -205,25 +203,185 @@ GROUP BY u.user_code, u.user_name, DATE(qv.created_on)  ORDER BY u.user_code, re
                     title='Daily Revenue per User',
                     labels={'revenue_date': 'Date', 'daily_revenue': 'Revenue'}
                 )
-
                 st.plotly_chart(fig, use_container_width=True)
 
-        if user_menu == 'INVENTORY':
-            product = ''
-            sql_product = "SELECT * from product_master"
-            url = "http://localhost:8080/query"
-            # SQL query you want to send
-            payload = {
-                "sqlQuery": f"{sql_product}"
-            }
-            # Make the POST request
-            response_name = requests.post(url, json=payload)
-            if response_name.status_code == 200:
-                data1 = response_name.json()  # already parsed JSON
-                product = pd.DataFrame(data1)
-                print(product.columns)
-            selected_product = st.sidebar.selectbox("Select kam", product['product_name'].unique())
+    if user_menu == 'QUOTATION':
+        product = ''
+        sql_product = """SELECT 
+    qvpm.qv_product_mapping_id,
+    qvpm.created_by,
+    u.user_name,
+    qvpm.quotation_version_code,
+    qvpm.product_code,
+    qvpm.product_quantity,
+    qvpm.product_discount,
+    qvpm.product_total_price,
+    qvpm.product_retail_price,
+    qvpm.product_kam_price,
 
+    qvc.commission_display_percent,
+
+    qvpp.product_paramter_name,
+    qvpp.product_paramter_value,
+    qvpp.product_outer_diameter,
+    qvpp.product_paramter_price,
+
+    pm.brand_name,
+    pm.product_desc,
+    pm.retail_price AS master_retail_price,
+    pm.lp_price,
+    pm.msp_price,
+    pm.product_name,
+
+    qv.status  -- Added status from quotation_version
+
+FROM quotation_version_product_mapping qvpm
+
+LEFT JOIN quotation_version_commission qvc 
+    ON qvpm.quotation_version_code = qvc.quotation_version_code 
+    AND qvpm.created_by = qvc.created_by
+
+LEFT JOIN quotation_version_product_parameter_mapping qvpp 
+    ON qvpm.quotation_version_code = qvpp.quotation_version_code 
+    AND qvpm.product_code = qvpp.product_code 
+    AND qvpm.created_by = qvpp.created_by
+
+LEFT JOIN product_master pm 
+    ON qvpm.product_code = pm.product_code
+
+LEFT JOIN user u 
+    ON qvpm.created_by = u.user_code
+
+LEFT JOIN quotation_version qv 
+    ON qvpm.quotation_version_code = qv.quotation_version_code;  -- Join to get status
+"""
+        url = "http://localhost:8080/query"
+        # SQL query you want to send
+        payload = {
+            "sqlQuery": f"{sql_product}"
+        }
+        print(payload)
+        # Make the POST request
+        response_name = requests.post(url, json=payload)
+        if response_name.status_code == 200:
+            data1 = response_name.json()  # already parsed JSON
+            df = pd.DataFrame(data1)
+            print(df.columns)
+            # Calculate total parameter price per row
+            df["parameter_total_price_per_unit"] = df["product_paramter_price"]
+            df["parameter_total_price_all"] = df["product_paramter_price"] * df["product_quantity"]
+
+            # Calculate retail base price total
+            df["base_retail_price_all"] = df["master_retail_price"] * df["product_quantity"]
+
+            # Final estimated price per row
+            df["estimated_total_price"] = df["parameter_total_price_all"] + df["base_retail_price_all"]
+
+            # Grouped by quotation
+            grouped = df.groupby("quotation_version_code").agg({
+                "product_quantity": "sum",
+                "parameter_total_price_all": "sum",
+                "base_retail_price_all": "sum",
+                "estimated_total_price": "sum"
+            }).reset_index()
+
+            st.subheader("📄 Quotation-Level Summary")
+            st.dataframe(grouped, use_container_width=True)
+
+            # Total revenue estimation
+            total_revenue = grouped["estimated_total_price"].sum()
+            st.metric("💰 Total Revenue (Estimated)", f"₹{total_revenue:,.0f}")
+
+            # sales distribution
+            st.subheader("🧾 Status Distribution")
+            status_counts = df['status'].value_counts().reset_index()
+            status_counts.columns = ['Status', 'Count']
+            fig_status = px.bar(
+                status_counts,
+                x='Count',
+                y='Status',
+                color='Status',
+                title="Status Count",
+                orientation='h'  # Optional: makes it horizontal
+            )
+            fig_status.update_layout(showlegend=False)  # 🔥 Hides the legend
+            st.plotly_chart(fig_status)
+
+            # Pie chart: Parameter cost impact
+            st.subheader("🔧 Parameter Cost Distribution")
+            param_cost = df.groupby("product_paramter_name")["parameter_total_price_all"].sum().reset_index()
+            fig = px.pie(
+                param_cost,
+                names="product_paramter_name",
+                values="parameter_total_price_all",
+                title="Total Parameter Value Impact"
+            )
+            fig.update_traces(textinfo='none')  # Hide text labels on the pie chart
+            st.plotly_chart(fig, use_container_width=True)
+
+            st.subheader("📦 Quotation Version Occurrences")
+            quotation_counts = df['quotation_version_code'].value_counts().reset_index()
+            quotation_counts.columns = ['quotation_version_code', 'product_quantity']
+            fig_quotation = px.bar(
+                quotation_counts,
+                x='quotation_version_code',
+                y='product_quantity',
+                title="Quotation Version Code Frequency",
+                text='product_quantity',
+                color='quotation_version_code'
+            )
+
+            fig_quotation.update_layout(
+                showlegend=False,
+                xaxis_title="Quotation Version Code",
+                yaxis_title="Product Quantity"
+            )
+
+            # Display
+            st.plotly_chart(fig_quotation)
+
+            # st.subheader("👨‍💼 Created By Analysis")
+            # created_by_summary = df.groupby('user_name')['product_total_price'].sum().reset_index()
+            # fig_user = px.bar(created_by_summary, x='user_name', y='product_total_price',
+            #                   title="Quotation Value by Creator", color='user_name')
+            # st.plotly_chart(fig_user)
+
+            # Salesperson-wise performance
+            st.subheader("🧑‍💼 Salesperson Performance")
+            salesperson_perf = df.groupby("user_name").agg({
+                "product_quantity": "sum",
+                "estimated_total_price": "sum"
+            }).reset_index()
+            fig3 = px.bar(salesperson_perf, x="user_name", y="estimated_total_price",
+                          title="Revenue by Salesperson", labels={"estimated_total_price": "Estimated Revenue"})
+            st.plotly_chart(fig3, use_container_width=True)
+
+            st.sidebar.header("🔎 Filter Data")
+            selected_status = st.sidebar.multiselect("Select Status", options=df['status'].unique(),
+                                                     default=df['status'].unique())
+
+            filtered_df = df[df['status'].isin(selected_status)]
+            st.subheader("📄 Filtered Records")
+            st.dataframe(filtered_df)
+
+        else:
+            st.info("system doesn't have any records.")
+
+    if user_menu == 'INVENTORY':
+        product = ''
+        sql_product = "SELECT * from product_master"
+        url = "http://localhost:8080/query"
+        # SQL query you want to send
+        payload = {
+            "sqlQuery": f"{sql_product}"
+        }
+        # Make the POST request
+        response_name = requests.post(url, json=payload)
+        if response_name.status_code == 200:
+            data1 = response_name.json()  # already parsed JSON
+            product = pd.DataFrame(data1)
+            print(product.columns)
+        selected_product = st.sidebar.selectbox("Select kam", product['product_name'].unique())
 else:
     print("Failed with status code:", response.status_code)
     print("Error message:", response.text)

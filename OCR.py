@@ -42,7 +42,6 @@ st.set_page_config(page_title="i can retrive any DATA for OCR")
 st.header("gemini app to retrieve data from OCR text")
 
 question = st.text_input("Input:", key="input")
-
 submit = st.button("FEED ME DATA")
 
 if submit:
@@ -62,7 +61,6 @@ if submit:
             # Convert JSON to Pandas DataFrame
             df = pd.json_normalize(data)  # Flatten nested JSON
 
-            # Display DataFrame as a table
             st.write("### Extracted Data Table")
             st.dataframe(df)  # Show table in Streamlit
 
