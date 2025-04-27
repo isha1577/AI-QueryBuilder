@@ -4,12 +4,12 @@ import os
 
 def get_connection():
     return mysql.connector.connect(
-        host="13.232.218.220",
-        user="abneruser",
-        password="Abner@1234$Secure",
-        database="abner_common",
-        port=3306
-    )
+    host="13.232.218.220",
+    user="abneruser",
+    password="Abner@1234$Secure",
+    database="abner_common",
+    port=3306
+)
 
 
 def insert_or_increment_question(question):
@@ -52,10 +52,21 @@ def update_fav(faq_id, favorite):
     cursor.close()
     conn.close()
 
+def get_faq_id_by_question(question):
+    conn = get_connection()
+    cursor = conn.cursor()
+    query = "SELECT id FROM poc_dashboard WHERE questions = %s"
+    cursor.execute(query, (question,))
+    result = cursor.fetchone()
+    faq_id = result[0] if result else None
+    cursor.close()
+    conn.close()
+    return faq_id
 
 def fetch_data(sql):
     conn = get_connection()
-    dataframe = pd.read_sql(sql, conn)
+    dataframe = pd.read_sql(sql, conn)  # This includes column names
     dataframe.to_csv("temp_df.csv", index=False)
     conn.close()
     return dataframe
+
