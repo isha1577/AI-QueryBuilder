@@ -13,17 +13,18 @@ names = ['Admin', 'LeadRo']
 usernames = ['admin', 'leadRo']
 passwords = ['password123', 'root456']
 hashed_passwords = stauth.Hasher(passwords).generate()
-
-def process_question_and_display(question, prompt):
+cache = st.session_state.get('cache', False)
+def process_question_and_display(question, prompt, cache):
     try:
-        # Step 1: Get SQL
+        del st.session_state['selected_question']
+
         generated_sql = get_gemini_response(question.strip(), prompt)
         print(generated_sql)
 
         # Step 2: Fetch data
         df = fetch_data(generated_sql)
         st.success("Data generated! Go to the chatmore page to view <-")
-
+        st.switch_page("pages/Chat More.py")
         # Step 3: Plotting based on available columns
         if 'urgency' in df.columns:
             fig = px.bar(df['urgency'].value_counts().reset_index(), x='count', y='urgency')
@@ -102,7 +103,7 @@ elif authentication_status is True:
     if submit and question.strip():
 
         faq_id = insert_or_increment_question(question.strip())
-        process_question_and_display(question.strip(),prompt)
+        process_question_and_display(question.strip(), prompt, False)
 
     if fav and question.strip():
         if not faq_id:
@@ -145,8 +146,8 @@ elif authentication_status is True:
     # If user clicks any Answer button, process it here!
     if st.session_state.selected_question:
         st.write(f"Q. {st.session_state.selected_question}")
-        process_question_and_display(st.session_state.selected_question, prompt)
-        if st.button("clear", help="clear cache"):
+        process_question_and_display(st.session_state.selected_question, prompt, True)
+        if st.button("Clear", help="Clear Cache"):
             del st.session_state['selected_question']
 
         authenticator.logout('Logout', 'sidebar')

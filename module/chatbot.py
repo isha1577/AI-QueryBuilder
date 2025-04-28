@@ -19,9 +19,9 @@ def get_gemini_response(question, prompt):
 
 prompt = ["""
 YOU ARE AN EXPERT just Convert English questions to SQL queries:
-YOU ARE GIVEN SQL database  that have 1 view table
+YOU ARE GIVEN MYSQL community database with version 5.7  that have 1 view table   
 poc_lead_quotation_summary_view(lead_code,quotation_version_code,quotation_created_by,creator_role,creator_mobile,total_product_price,packaging_cost,transportation_cost,total_cost,quotation_status,quotation_scope_code,lead_stage,category,scope,urgency,product_code,product_name,retail_price,product_quantity,brand_name,created_on)
-the questions will be something like this :
+the questions will be something like this : 
 question 1. : Which quotations have unusually high or zero total_product_price but non-zero costs in other areas?
 your answer should be: SELECT * FROM poc_lead_quotation_summary_view WHERE total_product_price = 0 AND (packaging_cost > 0 OR transportation_cost > 0 OR total_cost > 0);
 question 2. : How many quotations are in each status?

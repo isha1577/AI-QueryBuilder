@@ -5,7 +5,7 @@ import os
 import google.generativeai as genai
 import tabulate
 import plotly.express as px
-st.set_page_config(page_title="💬 Explain & Chat", layout="wide")
+st.set_page_config(page_title="Abner Chatboard", layout="wide")
 genai.configure(api_key="AIzaSyD42VSIy3Ts5XJKUfD8wOWysNUPrObWnUE")
 
 
