@@ -5,6 +5,9 @@ import os
 import google.generativeai as genai
 import tabulate
 import plotly.express as px
+from module.connection import update_fav, get_faq_id_by_question
+
+
 st.set_page_config(page_title="Abner Chatboard", layout="wide")
 genai.configure(api_key="AIzaSyD42VSIy3Ts5XJKUfD8wOWysNUPrObWnUE")
 
@@ -12,11 +15,6 @@ genai.configure(api_key="AIzaSyD42VSIy3Ts5XJKUfD8wOWysNUPrObWnUE")
 @st.cache_resource
 def load_model():
     return genai.GenerativeModel('models/gemini-1.5-pro-latest')
-
-
-prompt = ["""I am giving you the Data as input as table i want you to give me the insghts upon that data as chatbot in  
-very very short message"""]
-
 
 def get_gemini_response(question, prompt):
     try:
@@ -45,7 +43,21 @@ st.title("💬Chat with me")
 data_str = ""
 col1, col3, col2 = st.columns([1, 0.1, 1])
 with col1:
-    chat_more = st.text_input(label="Input", label_visibility="hidden", key="chat_more", placeholder="Ask a follow-up question")
+    faq_id = ""
+    if "question" in st.session_state:
+        left, right = st.columns([1, 0.1])
+        with left:
+            st.markdown(f"###### Q.{st.session_state['question']}")
+        with right:
+            fav = st.button("❤️", help="Add to favorites")
+        if fav and st.session_state['question']:
+            faq_id = get_faq_id_by_question(st.session_state['question'])
+            update_fav(faq_id, True)
+            st.success("Added to favorites!")
+            st.rerun()
+
+    chat_more = st.text_input(label="Input", label_visibility="hidden", key="chat_more",
+                              placeholder="Ask a follow-up question")
     # if st.button("Chat"):
     #     if not chat_more:
     #         st.warning("Please enter a message.")
@@ -87,13 +99,13 @@ with col1:
                             else:
                                 st.warning("Please select valid X and Y axis columns to generate the graph.")
                         else:
-                            st.warning("DataFrame is empty or doesn't have enough columns.")
+                            print("DataFrame is empty or doesn't have enough columns.")
 
                     data_str = df.to_markdown(index=False)
                     print("==============", data_str)
 
-                    prompt1 = [f"""Continue the brief conversation as CHATBOT based on ONLY this DATA give 
-                    the insights = {data_str}"""]
+                    prompt1 = [f"""Continue a brief conversation as CHATBOT based on ONLY this DATA give 
+                    the insights = {data_str} also if Data contains REVENUE or PRIZE or COST write in rupees"""]
                     response = get_gemini_response(chat_more, prompt1)
                     st.session_state.chat_history.insert(0, {"user": chat_more, "response": response})
                     with open(CACHE_FILE, "w") as f:
@@ -106,13 +118,13 @@ with col1:
         st.error(f"Error generating response: {e}")
 
 with col2:
-    if st.button("Clear history"):
+    if st.button("Clear Chat"):
         st.session_state.chat_history = []
         if os.path.exists(CACHE_FILE):
             os.remove(CACHE_FILE)
         st.success("Conversation ended and cache cleared.")
 
-    st.subheader("📝 Conversation History")
+    st.subheader("📝 Conversation")
 
     # Inject scrollable container styling
     st.markdown("""
@@ -123,7 +135,7 @@ with col2:
             padding: 10px;
             border: 1px solid rgb(38, 39, 48);
             border-radius: 10px;
-            background-color: rgb(14, 17, 23);
+            
         }
         .user-msg {
             font-weight: bold;

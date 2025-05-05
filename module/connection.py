@@ -1,7 +1,7 @@
 import mysql.connector
 import pandas as pd
 import os
-
+from sqlalchemy import create_engine
 def get_connection():
     return mysql.connector.connect(
     host="13.232.218.220",
@@ -65,8 +65,11 @@ def get_faq_id_by_question(question):
 
 def fetch_data(sql):
     conn = get_connection()
-    dataframe = pd.read_sql(sql, conn)  # This includes column names
+    dataframe = pd.read_sql(sql, conn)
     dataframe.to_csv("temp_df.csv", index=False)
     conn.close()
     return dataframe
+
+
+
 

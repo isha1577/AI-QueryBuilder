@@ -1,12 +1,12 @@
 import streamlit as st
-
+import base64
 st.set_page_config(page_title="Abner Chatboard")
 # from module.authentication import authenticator
 import pandas as pd
 import plotly.express as px
 from module.connection import insert_or_increment_question, fetch_fav, update_fav, fetch_data, get_faq_id_by_question
 from module.chatbot import get_gemini_response, prompt
-
+from urllib.parse import urlencode
 import streamlit_authenticator as stauth
 
 names = ['Admin', 'LeadRo']
@@ -14,39 +14,22 @@ usernames = ['admin', 'leadRo']
 passwords = ['password123', 'root456']
 hashed_passwords = stauth.Hasher(passwords).generate()
 cache = st.session_state.get('cache', False)
+
+
 def process_question_and_display(question, prompt, cache):
     try:
         del st.session_state['selected_question']
-
         generated_sql = get_gemini_response(question.strip(), prompt)
         print(generated_sql)
 
-        # Step 2: Fetch data
-        df = fetch_data(generated_sql)
+        fetch_data(generated_sql)
+        st.session_state["question"] = question
         st.success("Data generated! Go to the chatmore page to view <-")
         st.switch_page("pages/Chat More.py")
-        # Step 3: Plotting based on available columns
-        if 'urgency' in df.columns:
-            fig = px.bar(df['urgency'].value_counts().reset_index(), x='count', y='urgency')
-            st.plotly_chart(fig)
-
-        if 'month' in df.columns and 'lead_count' in df.columns:
-            df['month'] = pd.to_datetime(df['month'])
-            fig = px.line(df.sort_values('month'), x='month', y='lead_count')
-            st.plotly_chart(fig)
-
-        if 'contact_designation' in df.columns:
-            fig = px.bar(df.sort_values('lead_count'), x='lead_count', y='contact_designation', orientation='h')
-            st.plotly_chart(fig)
-
-        if 'month' in df.columns and 'total_revenue' in df.columns:
-            fig = px.bar(df.sort_values('month'), x='month', y='total_revenue')
-            st.plotly_chart(fig, use_container_width=True)
 
     except Exception as e:
         print(f"error message = {e}")
         st.error(f"I lost my way")
-
 
 
 authenticator = stauth.Authenticate(
@@ -89,7 +72,20 @@ elif authentication_status is True:
     """, unsafe_allow_html=True)
 
     st.sidebar.success(f"Welcome {name}!")
-    st.title("🧠 What’s on your mind?")
+    with open("abstractLayer.png", "rb") as img_file:
+        encoded = base64.b64encode(img_file.read()).decode()
+
+    # Use HTML with embedded image
+    st.markdown(
+        f"""
+        <div style="display: flex; align-items: center;">
+            <img src="data:image/png;base64,{encoded}" width="80" style="margin-right: 10px;">
+            <h1 style="margin: 0;">What’s on your mind?</h1>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 
     question = st.text_input(label="input", label_visibility="hidden", placeholder="Ask a question", key="input")
     col1, col2 = st.columns([1, 0.1])
@@ -97,20 +93,10 @@ elif authentication_status is True:
 
     with col1:
         submit = st.button("Submit")
-    with col2:
-        fav = st.button("❤️", help="Add to favorites")
 
     if submit and question.strip():
-
         faq_id = insert_or_increment_question(question.strip())
         process_question_and_display(question.strip(), prompt, False)
-
-    if fav and question.strip():
-        if not faq_id:
-            faq_id = get_faq_id_by_question(question.strip())
-        update_fav(faq_id, True)
-        st.success("Added to favorites!")
-        st.rerun()
 
     # 1. Initialize a session_state variable to store which question is selected
     if 'selected_question' not in st.session_state:
@@ -145,9 +131,7 @@ elif authentication_status is True:
 
     # If user clicks any Answer button, process it here!
     if st.session_state.selected_question:
-        st.write(f"Q. {st.session_state.selected_question}")
+        # st.write(f"Q. {st.session_state.selected_question}")
         process_question_and_display(st.session_state.selected_question, prompt, True)
-        if st.button("Clear", help="Clear Cache"):
-            del st.session_state['selected_question']
 
-        authenticator.logout('Logout', 'sidebar')
+    authenticator.logout('Logout', 'sidebar')
