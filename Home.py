@@ -9,7 +9,6 @@ from module.connection import insert_or_increment_question, fetch_fav, update_fa
 from module.chatbot import get_gemini_response, admin_prompt , user_prompt
 import streamlit_authenticator as stauth
 from streamlit_webrtc import webrtc_streamer, AudioProcessorBase
-import av
 
 
 names = ['Admin', 'Vimal', 'Kajal']
