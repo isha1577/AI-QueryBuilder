@@ -1,13 +1,24 @@
 import mysql.connector
 import pandas as pd
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
+
+username = "abneruser"
+# Encode special characters in the password
+password = "Abner%401234%24Secure"
+host = "13.232.218.220"
+port = 3306
+database = "uat_abner_db"
+
+engine = create_engine(f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}")
+
+
 def get_connection():
     return mysql.connector.connect(
     host="13.232.218.220",
     user="abneruser",
     password="Abner@1234$Secure",
-    database="abner_common",
+    database="uat_abner_db",
     port=3306
 )
 
@@ -15,12 +26,12 @@ def get_connection():
 def insert_or_increment_question(question):
     conn = get_connection()
     cursor = conn.cursor()
-    check_query = "SELECT id, count FROM poc_dashboard WHERE questions = %s"
+    check_query = "SELECT id, count FROM poc_dashboard WHERE questions = %s and delete_flag = 0"
     cursor.execute(check_query, (question,))
     result = cursor.fetchone()
     if result:
         faq_id, current_count = result
-        update_query = "UPDATE poc_dashboard SET count = %s WHERE id = %s"
+        update_query = "UPDATE poc_dashboard SET count = %s WHERE id = %s and delete_flag = 0"
         cursor.execute(update_query, (current_count + 1, faq_id))
     else:
         insert_query = "INSERT INTO poc_dashboard (questions, favorite, count) VALUES (%s, %s, %s)"
@@ -35,7 +46,7 @@ def insert_or_increment_question(question):
 def fetch_fav():
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
-    query = "SELECT * FROM poc_dashboard ORDER BY count DESC"
+    query = "SELECT * FROM poc_dashboard where delete_flag = 0 ORDER BY count DESC"
     cursor.execute(query)
     faqs = cursor.fetchall()
     cursor.close()
@@ -46,7 +57,7 @@ def fetch_fav():
 def update_fav(faq_id, favorite):
     conn = get_connection()
     cursor = conn.cursor()
-    query = "UPDATE poc_dashboard SET favorite = %s WHERE id = %s"
+    query = "UPDATE poc_dashboard SET favorite = %s WHERE id = %s and delete_flag = 0"
     cursor.execute(query, (favorite, faq_id))
     conn.commit()
     cursor.close()
@@ -55,7 +66,7 @@ def update_fav(faq_id, favorite):
 def get_faq_id_by_question(question):
     conn = get_connection()
     cursor = conn.cursor()
-    query = "SELECT id FROM poc_dashboard WHERE questions = %s"
+    query = "SELECT id FROM poc_dashboard WHERE questions = %s and delete_flag = 0"
     cursor.execute(query, (question,))
     result = cursor.fetchone()
     faq_id = result[0] if result else None
@@ -64,12 +75,7 @@ def get_faq_id_by_question(question):
     return faq_id
 
 def fetch_data(sql):
-    conn = get_connection()
-    dataframe = pd.read_sql(sql, conn)
+    # Use SQLAlchemy engine here for pandas compatibility
+    dataframe = pd.read_sql(text(sql), con=engine)
     dataframe.to_csv("temp_df.csv", index=False)
-    conn.close()
     return dataframe
-
-
-
-

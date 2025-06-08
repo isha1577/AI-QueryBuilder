@@ -6,7 +6,7 @@ import google.generativeai as genai
 import tabulate
 import plotly.express as px
 from module.connection import update_fav, get_faq_id_by_question
-
+import re
 
 st.set_page_config(page_title="Abner Chatboard", layout="wide")
 genai.configure(api_key="AIzaSyD42VSIy3Ts5XJKUfD8wOWysNUPrObWnUE")
@@ -15,6 +15,7 @@ genai.configure(api_key="AIzaSyD42VSIy3Ts5XJKUfD8wOWysNUPrObWnUE")
 @st.cache_resource
 def load_model():
     return genai.GenerativeModel('models/gemini-1.5-pro-latest')
+
 
 def get_gemini_response(question, prompt):
     try:
@@ -38,6 +39,38 @@ if os.path.exists(CACHE_FILE) and not st.session_state.chat_history:
             st.session_state.chat_history = json.load(f)
     except Exception as e:
         st.warning(f"Failed to load cache: {e}")
+st.sidebar.markdown("""
+Welcome to the **Abner Chatbot**! This application helps you interact with your database using simple language.
+
+### 🔹 Step-by-Step Guide:
+
+1. **Ask a Question**
+   - Type a business question like:
+     - *"What were the leads in March 2024?"*
+     - *"Show me the top 5 products by revenue."*
+
+2. **AI Response**
+   - The app will:
+     - Generate a human-readable answer,
+     - Display the **data output** from your database.
+
+3. **Ask Follow-up Questions**
+   - **Don't ask outside-database questions**  
+   - You can continue the conversation using follow-up questions like:
+     - *"What's the total growth rate in current month?"*
+     - *"Calculate the average order value."*
+
+4. **Interact with the Graphs**
+   - Change the x/y axis to the labels of your requirement
+   - display the graph as per your requirement
+
+---
+### 🛠️ Pro Tip:
+Want the best results? Be **specific** and **data-oriented** in your questions.
+
+
+Happy analyzing! 📊✨
+""")
 
 st.title("💬Chat with me")
 data_str = ""
@@ -58,10 +91,7 @@ with col1:
 
     chat_more = st.text_input(label="Input", label_visibility="hidden", key="chat_more",
                               placeholder="Ask a follow-up question")
-    # if st.button("Chat"):
-    #     if not chat_more:
-    #         st.warning("Please enter a message.")
-    #     else:
+
     try:
         if not os.path.exists(CACHE_FILE):
             with open(CACHE_FILE, "w") as f:
@@ -102,16 +132,49 @@ with col1:
                             print("DataFrame is empty or doesn't have enough columns.")
 
                     data_str = df.to_markdown(index=False)
-                    print("==============", data_str)
+                    df_prompt = df.to_csv(index=False)
+                    if chat_more:
+                        print(chat_more)
+                        prompt1 = [f"""Convert the asked question to a Pandas formula using ONLY this DataFrame: {df_prompt}
+                                    Follow these rules strictly:
+                                    Only return the Pandas formula
+                                    Do NOT provide any explanation or additional text
+                                    the DataFrame is named df
+                                    dont use ``` in the begin 
+                                    Match logic and filtering precisely to the question
+                                    Examples:
+                                    Question 1: how many leads are cold?
+                                    Answer: df[df['urgency'] == 'Cold'].shape[0]
+                                    Question 2: list top 3 products
+                                    Answer: df.nlargest(3, 'total revenue')['product name'].tolist()
+                                    Question 3:give component names with their threshold
+                                    Answer: df[['component name', 'threshold']].drop_duplicates()
+                                    Question 4:list down types of driver
+                                    Answer: df[df['component_name'].str.contains('driver', case=False, na=False)].drop_duplicates()
+                        """]
+                        response = get_gemini_response(chat_more, prompt1)
+                        print(response)
+                        # pattern = r"```pandas\s*(.*?)\s*```"
+                        # match = re.search(pattern, response, re.DOTALL)
+                        match = response
+                        result = []
+                        if match:
+                            code_to_execute = response
+                            try:
+                                result = eval(code_to_execute)
+                                print(result)
+                            except Exception as e:
+                                result = f"Error while executing code: {e}"
 
-                    prompt1 = [f"""Continue a brief conversation as CHATBOT based on ONLY this DATA give 
-                    the insights = {data_str} also if Data contains REVENUE or PRIZE or COST write in rupees"""]
-                    response = get_gemini_response(chat_more, prompt1)
-                    st.session_state.chat_history.insert(0, {"user": chat_more, "response": response})
+                        prompt2 = [f"""this is the question {chat_more} and this is the answer {result}"""]
+                        ai_response = get_gemini_response("write answer properly", prompt2)
+                if chat_more:
+                    st.session_state.chat_history.insert(0, {"user": chat_more, "response": ai_response})
                     with open(CACHE_FILE, "w") as f:
                         json.dump(st.session_state.chat_history, f, indent=2)
                 else:
                     st.write("csv file not existing")
+
         else:
             st.write("cache file not present")
     except Exception as e:
@@ -135,7 +198,7 @@ with col2:
             padding: 10px;
             border: 1px solid rgb(38, 39, 48);
             border-radius: 10px;
-            
+
         }
         .user-msg {
             font-weight: bold;

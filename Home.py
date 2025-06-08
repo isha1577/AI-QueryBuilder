@@ -1,20 +1,66 @@
 import streamlit as st
 import base64
-st.set_page_config(page_title="Abner Chatboard")
-# from module.authentication import authenticator
-import pandas as pd
-import plotly.express as px
-from module.connection import insert_or_increment_question, fetch_fav, update_fav, fetch_data, get_faq_id_by_question
-from module.chatbot import get_gemini_response, prompt
-from urllib.parse import urlencode
-import streamlit_authenticator as stauth
+import speech_recognition as sr
+from streamlit.components.v1 import html
 
-names = ['Admin', 'LeadRo']
-usernames = ['admin', 'leadRo']
-passwords = ['password123', 'root456']
+
+st.set_page_config(page_title="Abner Chatboard")
+from module.connection import insert_or_increment_question, fetch_fav, update_fav, fetch_data, get_faq_id_by_question
+from module.chatbot import get_gemini_response, admin_prompt , user_prompt
+import streamlit_authenticator as stauth
+from streamlit_webrtc import webrtc_streamer, AudioProcessorBase
+import av
+
+
+names = ['Admin', 'Vimal', 'Kajal']
+usernames = ['Admin', 'Vimal', 'Kajal']
+passwords = ['password123', 'root456', 'kajal20044']
 hashed_passwords = stauth.Hasher(passwords).generate()
 cache = st.session_state.get('cache', False)
 
+# Session state to hold the text and trigger
+if 'transcription' not in st.session_state:
+    st.session_state.transcription = ""
+
+#
+# class AudioProcessor(AudioProcessorBase):
+#     def __init__(self):
+#         self.recognizer = sr.Recognizer()
+#         self.mic_audio = []
+#
+#     def recv(self, frame: av.AudioFrame) -> av.AudioFrame:
+#         audio = frame.to_ndarray()
+#         # You would process the audio chunk here.
+#         # Use libraries like vosk, whisper, or stream to text
+#         return frame
+#
+# webrtc_ctx = webrtc_streamer(
+#     key="speech",
+#     mode="sendonly",
+#     audio_receiver_size=256,
+#     client_settings={"media_stream_constraints": {"audio": True, "video": False}},
+#     audio_processor_factory=AudioProcessor,
+# )
+#
+# st.write("🎤 Speak into your mic. This setup supports continuous input.")
+#
+
+
+def recognize_speech():
+    recognizer = sr.Recognizer()
+    mic = sr.Microphone()
+    with mic as source:
+        st.info("🎤 Listening... please speak.")
+        recognizer.adjust_for_ambient_noise(source)
+        audio = recognizer.listen(source)
+    try:
+        st.info("📝 Recognizing...")
+        text = recognizer.recognize_google(audio)
+        return text
+    except sr.UnknownValueError:
+        return "❌ Could not understand audio"
+    except sr.RequestError:
+        return "⚠️ API unavailable"
 
 def process_question_and_display(question, prompt, cache):
     try:
@@ -24,8 +70,9 @@ def process_question_and_display(question, prompt, cache):
 
         fetch_data(generated_sql)
         st.session_state["question"] = question
-        st.success("Data generated! Go to the chatmore page to view <-")
-        st.switch_page("pages/Chat More.py")
+        st.success("Data generated!")
+        st.sidebar.page_link("pages/Calcutate.py", label="Calculator")
+        st.switch_page("pages/Calcutate.py")
 
     except Exception as e:
         print(f"error message = {e}")
@@ -37,6 +84,7 @@ authenticator = stauth.Authenticate(
         "usernames": {
             usernames[0]: {"name": names[0], "password": hashed_passwords[0]},
             usernames[1]: {"name": names[1], "password": hashed_passwords[1]},
+            usernames[2]: {"name": names[2], "password": hashed_passwords[2]}
         }
     },
     cookie_name='some_cookie_name',
@@ -46,10 +94,14 @@ authenticator = stauth.Authenticate(
 
 name, authentication_status, username = authenticator.login('Login', 'main')
 
-# Store the authentication status in session_state
 st.session_state["authentication_status"] = authentication_status
+st.session_state['username'] = username
+if st.session_state['username'] == 'admin':
+    prompt = admin_prompt
+else:
+    prompt = user_prompt
 
-# Handle different authentication outcomes
+
 if authentication_status is False:
     st.error("❌ Username/password is incorrect.")
 
@@ -86,8 +138,15 @@ elif authentication_status is True:
         unsafe_allow_html=True
     )
 
+    mic_clicked = st.button("🎤 Click to Speak")
+    if mic_clicked:
+        st.session_state.transcription = recognize_speech()
 
-    question = st.text_input(label="input", label_visibility="hidden", placeholder="Ask a question", key="input")
+    # Show editable input box with transcription
+    question = st.text_input("Transcribed Text", value=st.session_state.transcription, key="transcription_input")
+
+    # question = st.text_input(label="input", label_visibility="hidden", placeholder="Ask a question", key="input")
+
     col1, col2 = st.columns([1, 0.1])
     faq_id = ""
 
@@ -135,3 +194,4 @@ elif authentication_status is True:
         process_question_and_display(st.session_state.selected_question, prompt, True)
 
     authenticator.logout('Logout', 'sidebar')
+
