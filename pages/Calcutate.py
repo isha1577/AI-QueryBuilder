@@ -3,10 +3,8 @@ import pandas as pd
 import json
 import os
 import google.generativeai as genai
-import tabulate
 import plotly.express as px
 from module.connection import update_fav, get_faq_id_by_question
-import re
 
 st.set_page_config(page_title="Abner Chatboard", layout="wide")
 genai.configure(api_key="AIzaSyD42VSIy3Ts5XJKUfD8wOWysNUPrObWnUE")
@@ -39,6 +37,16 @@ if os.path.exists(CACHE_FILE) and not st.session_state.chat_history:
             st.session_state.chat_history = json.load(f)
     except Exception as e:
         st.warning(f"Failed to load cache: {e}")
+st.markdown(
+    """
+    <style>
+    section[data-testid='stSidebar'] {
+        width: 100px !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 st.sidebar.markdown("""
 Welcome to the **Abner Chatbot**! This application helps you interact with your database using simple language.
 
@@ -89,8 +97,7 @@ with col1:
             st.success("Added to favorites!")
             st.rerun()
 
-    chat_more = st.text_input(label="Input", label_visibility="hidden", key="chat_more",
-                              placeholder="Ask a follow-up question")
+    chat_more = st.chat_input("Ask a follow-up question")
 
     try:
         if not os.path.exists(CACHE_FILE):
@@ -107,16 +114,67 @@ with col1:
                             st.code(f"{col_name}  : {value}")
                     else:
                         st.dataframe(df)
+                        data_str = df.to_markdown(index=False)
+                        df_prompt = df.to_csv(index=False)
+                        if chat_more:
+                            print(chat_more)
+                            prompt1 = [f"""Convert the asked question to a Pandas formula using ONLY this DataFrame: {df_prompt}
+                                        Follow these rules strictly:
+                                        Only return the Pandas formula
+                                        Do NOT provide any explanation or additional text
+                                        the DataFrame is named df
+                                        dont use ``` in the begin 
+                                        Match logic and filtering precisely to the question
+                                        Examples:
+                                        Question 1: how many leads are cold?
+                                        Answer: df[df['urgency'] == 'Cold'].shape[0]
+                                        Question 2: list top 3 products
+                                        Answer: df.nlargest(3, 'total revenue')['product name'].tolist()
+                                        Question 3:give component names with their threshold
+                                        Answer: df[['component name', 'threshold']].drop_duplicates()
+                                        Question 4:list down types of driver
+                                        Answer: df[df['component_name'].str.contains('driver', case=False, na=False)].drop_duplicates()
+                            """]
+                            response = get_gemini_response(chat_more, prompt1)
+                            print(response)
+                            # pattern = r"```pandas\s*(.*?)\s*```"
+                            # match = re.search(pattern, response, re.DOTALL)
+                            match = response
+                            result = []
+                            if match:
+                                code_to_execute = response
+                                try:
+                                    result = eval(code_to_execute)
+                                    print(result)
+                                except Exception as e:
+                                    result = f"Error while executing code: {e}"
+
+                            prompt2 = [f"""this is the question {chat_more} and this is the answer {result}"""]
+                            ai_response = get_gemini_response("write answer properly", prompt2)
+                            st.session_state.chat_history.insert(0, {"user": chat_more, "response": ai_response})
+                            with open(CACHE_FILE, "w") as f:
+                                json.dump(st.session_state.chat_history, f, indent=2)
+
                         if not df.empty and len(df.columns) >= 2:
                             graph_type = st.radio("Choose a graph type:", ['Bar', 'Line', 'Scatter', 'Pie'])
-
+                            print(df.dtypes)
                             fig = None
                             if graph_type == 'Pie':
-                                name_col = st.selectbox("Select column for labels (names):", df.columns)
-                                value_col = st.selectbox("Select column for values:", df.columns)
-                                if name_col and value_col:
-                                    fig = px.pie(df, names=name_col, values=value_col, title="Pie Chart")
+                                object_columns = df.select_dtypes(include='object').columns
 
+                                # Filter for numerical columns (integer or float)
+                                numerical_columns = df.select_dtypes(include=['int64', 'float64']).columns
+
+                                if len(object_columns) == 0:
+                                    st.error("No object-type columns available for pie chart label.")
+                                elif len(numerical_columns) == 0:
+                                    st.error("No numerical columns available for pie chart values.")
+                                else:
+                                    name_col = st.selectbox("Select column for labels (names):", object_columns)
+                                    value_col = st.selectbox("Select column for values.", numerical_columns)
+
+                                    if name_col and value_col:
+                                        fig = px.pie(df, names=name_col, values=value_col, title='Pie Chart')
                             else:
                                 x_axis = st.selectbox("X Axis", df.columns, key="x_axis")
                                 y_axis = st.multiselect("Y Axis", df.columns, default=[df.columns[1]],
@@ -131,47 +189,6 @@ with col1:
                         else:
                             print("DataFrame is empty or doesn't have enough columns.")
 
-                    data_str = df.to_markdown(index=False)
-                    df_prompt = df.to_csv(index=False)
-                    if chat_more:
-                        print(chat_more)
-                        prompt1 = [f"""Convert the asked question to a Pandas formula using ONLY this DataFrame: {df_prompt}
-                                    Follow these rules strictly:
-                                    Only return the Pandas formula
-                                    Do NOT provide any explanation or additional text
-                                    the DataFrame is named df
-                                    dont use ``` in the begin 
-                                    Match logic and filtering precisely to the question
-                                    Examples:
-                                    Question 1: how many leads are cold?
-                                    Answer: df[df['urgency'] == 'Cold'].shape[0]
-                                    Question 2: list top 3 products
-                                    Answer: df.nlargest(3, 'total revenue')['product name'].tolist()
-                                    Question 3:give component names with their threshold
-                                    Answer: df[['component name', 'threshold']].drop_duplicates()
-                                    Question 4:list down types of driver
-                                    Answer: df[df['component_name'].str.contains('driver', case=False, na=False)].drop_duplicates()
-                        """]
-                        response = get_gemini_response(chat_more, prompt1)
-                        print(response)
-                        # pattern = r"```pandas\s*(.*?)\s*```"
-                        # match = re.search(pattern, response, re.DOTALL)
-                        match = response
-                        result = []
-                        if match:
-                            code_to_execute = response
-                            try:
-                                result = eval(code_to_execute)
-                                print(result)
-                            except Exception as e:
-                                result = f"Error while executing code: {e}"
-
-                        prompt2 = [f"""this is the question {chat_more} and this is the answer {result}"""]
-                        ai_response = get_gemini_response("write answer properly", prompt2)
-                if chat_more:
-                    st.session_state.chat_history.insert(0, {"user": chat_more, "response": ai_response})
-                    with open(CACHE_FILE, "w") as f:
-                        json.dump(st.session_state.chat_history, f, indent=2)
                 else:
                     st.write("csv file not existing")
 
@@ -223,5 +240,4 @@ with col2:
         chat_html += f'<div class="bot-msg">🤖 BOT: {msg["response"]}</div>'
 
     chat_html += '</div>'  # Close scroll box
-
     st.markdown(chat_html, unsafe_allow_html=True)

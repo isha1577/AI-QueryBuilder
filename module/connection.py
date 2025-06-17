@@ -8,7 +8,7 @@ username = "abneruser"
 password = "Abner%401234%24Secure"
 host = "13.232.218.220"
 port = 3306
-database = "uat_abner_db"
+database = "abner_common"
 
 engine = create_engine(f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}")
 
@@ -18,9 +18,25 @@ def get_connection():
     host="13.232.218.220",
     user="abneruser",
     password="Abner@1234$Secure",
-    database="uat_abner_db",
+    database="abner_common",
     port=3306
 )
+
+def get_credentials():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT FIRST_NAME, USER_NAME, PASSWORD FROM user")
+    rows = cursor.fetchall()
+    conn.close()
+
+    credentials = {"usernames": {}}
+    for FIRST_NAME, USER_NAME, PASSWORD in rows:
+        credentials["usernames"][USER_NAME] = {
+            "name": FIRST_NAME,
+            "password": PASSWORD
+        }
+    return credentials
+
 
 
 def insert_or_increment_question(question):
