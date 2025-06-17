@@ -3,7 +3,7 @@ import base64
 import speech_recognition as sr
 
 st.set_page_config(page_title="Abner Chatboard")
-from module.connection import insert_or_increment_question, fetch_fav, update_fav, fetch_data, get_faq_id_by_question,get_credentials
+from module.connection import insert_or_increment_question, fetch_fav, update_fav, fetch_data, get_faq_id_by_question, get_credentials, fetch_suggestions
 from module.chatbot import get_gemini_response, admin_prompt , user_prompt
 import streamlit_authenticator as stauth
 
@@ -50,8 +50,7 @@ authenticator = stauth.Authenticate(
     cookie_expiry_days=1
 )
 cache = st.session_state.get('cache', False)
-if 'transcription' not in st.session_state:
-    st.session_state.transcription = ""
+
 name, authentication_status, username = authenticator.login('Login', 'main')
 st.session_state["authentication_status"] = authentication_status
 st.session_state["username"] = username
@@ -79,14 +78,21 @@ elif authentication_status is True:
         """,
         unsafe_allow_html=True
     )
+    if 'question' not in st.session_state:
+        st.session_state.question = ""
 
     mic_clicked = st.button("🎤 Click to Speak")
     if mic_clicked:
-        st.session_state.transcription = recognize_speech()
+        st.session_state.question = recognize_speech()
 
-    question = st.text_input("Transcribed Text", value=st.session_state.transcription, key="transcription_input")
+    question = st.text_input("Transcribed Text", value=st.session_state.question, key="transcription_input")
 
-    # question = st.text_input(label="input", label_visibility="hidden", placeholder="Ask a question", key="input")
+    if question:
+        matching_suggestions = fetch_suggestions(question)
+        if matching_suggestions:
+            for item in matching_suggestions:
+                if st.button(item, key=f"select_{item}"):
+                    st.session_state.question = item
 
     col1, col2 = st.columns([1, 0.1])
     faq_id = ""

@@ -114,6 +114,8 @@ with col1:
                             st.code(f"{col_name}  : {value}")
                     else:
                         st.dataframe(df)
+                        st.write("Summary statistics:")  # ----new
+                        st.write(df.describe())
                         data_str = df.to_markdown(index=False)
                         df_prompt = df.to_csv(index=False)
                         if chat_more:

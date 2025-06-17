@@ -37,6 +37,15 @@ def get_credentials():
         }
     return credentials
 
+def fetch_suggestions(input_val):
+    conn = get_connection()
+    cursor = conn.cursor()
+    query = "SELECT questions FROM poc_dashboard WHERE questions LIKE %s LIMIT 10"
+    cursor.execute(query, ('%' + input_val + '%',))
+    results = [item[0] for item in cursor.fetchall()]
+    cursor.close()
+    conn.close()
+    return results
 
 
 def insert_or_increment_question(question):
