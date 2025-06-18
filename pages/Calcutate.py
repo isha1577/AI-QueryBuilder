@@ -112,10 +112,11 @@ with col1:
                         col_name = df.columns[0]
                         for idx, value in enumerate(df[col_name]):
                             st.code(f"{col_name}  : {value}")
-                    else:
+                    elif df is not None and not df.empty:
                         st.dataframe(df)
-                        st.write("Summary statistics:")  # ----new
-                        st.write(df.describe())
+                        if len(df) > 2:
+                            st.write("Summary statistics:")  # ----new
+                            st.write(df.describe())
                         data_str = df.to_markdown(index=False)
                         df_prompt = df.to_csv(index=False)
                         if chat_more:
@@ -157,7 +158,7 @@ with col1:
                             with open(CACHE_FILE, "w") as f:
                                 json.dump(st.session_state.chat_history, f, indent=2)
 
-                        if not df.empty and len(df.columns) >= 2:
+                        if not df.empty and len(df.columns) >= 2 and len(df) > 1:
                             graph_type = st.radio("Choose a graph type:", ['Bar', 'Line', 'Scatter', 'Pie'])
                             print(df.dtypes)
                             fig = None
@@ -191,8 +192,10 @@ with col1:
                         else:
                             print("DataFrame is empty or doesn't have enough columns.")
 
+                    else:
+                        st.write("No Data found")
                 else:
-                    st.write("csv file not existing")
+                    st.write("Add CSV file")
 
         else:
             st.write("cache file not present")

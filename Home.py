@@ -31,15 +31,22 @@ def process_question_and_display(question, prompt, cache):
         generated_sql = get_gemini_response(question.strip(), prompt)
         print(generated_sql)
 
-        fetch_data(generated_sql)
-        st.session_state["question"] = question
-        st.success("Data generated!")
-        st.sidebar.page_link("pages/Calcutate.py", label="Calculator")
-        st.switch_page("pages/Calcutate.py")
+        df = fetch_data(generated_sql)
+        if df is not None and not df.empty:
+            insert_or_increment_question(question.strip())
 
+            st.session_state["question"] = question
+            st.success("Data generated!")
+            st.sidebar.page_link("pages/Calcutate.py", label="Calculator")
+            st.switch_page("pages/Calcutate.py")
+            return df
+        else:
+            st.warning("No data found.")
+            return None
     except Exception as e:
         print(f"error message = {e}")
         st.error(f"I lost my way")
+        return None
 
 
 credentials = get_credentials()
@@ -101,8 +108,7 @@ elif authentication_status is True:
         submit = st.button("Submit")
 
     if submit and question.strip():
-        faq_id = insert_or_increment_question(question.strip())
-        process_question_and_display(question.strip(), prompt, False)
+        df = process_question_and_display(question.strip(), prompt, False)
 
     if 'selected_question' not in st.session_state:
         st.session_state.selected_question = None
