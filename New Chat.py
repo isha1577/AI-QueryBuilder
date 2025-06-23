@@ -1,50 +1,33 @@
 import streamlit as st
 import base64
-import speech_recognition as sr
-
+from logging_setup import setup_logger
 st.set_page_config(page_title="Abner Chatboard")
-from module.connection import insert_or_increment_question, fetch_fav, update_fav, fetch_data, get_faq_id_by_question, get_credentials, fetch_suggestions
+from module.connection import insert_or_increment_question, fetch_fav, update_fav, fetch_data, get_credentials, fetch_suggestions
 from module.chatbot import get_gemini_response, admin_prompt , user_prompt
 import streamlit_authenticator as stauth
 
+logger = setup_logger()
 
-def recognize_speech():
-    recognizer = sr.Recognizer()
-    mic = sr.Microphone()
-    with mic as source:
-        st.info("🎤 Listening... please speak.")
-        recognizer.adjust_for_ambient_noise(source)
-        audio = recognizer.listen(source)
-    try:
-        st.info("📝 Recognizing...")
-        text = recognizer.recognize_google(audio)
-        return text
-    except sr.UnknownValueError:
-        return "❌ Could not understand audio"
-    except sr.RequestError:
-        return "⚠️ API unavailable"
 
 
 def process_question_and_display(question, prompt, cache):
     try:
         del st.session_state['selected_question']
         generated_sql = get_gemini_response(question.strip(), prompt)
-        print(generated_sql)
+        logger.info(generated_sql)
 
         df = fetch_data(generated_sql)
         if df is not None and not df.empty:
             insert_or_increment_question(question.strip())
-
             st.session_state["question"] = question
             st.success("Data generated!")
-            st.sidebar.page_link("pages/Calcutate.py", label="Calculator")
-            st.switch_page("pages/Calcutate.py")
-            return df
+            st.sidebar.page_link("pages/Deep View.py", label="Calculator")
+            st.switch_page("pages/Deep View.py")
         else:
             st.warning("No data found.")
             return None
     except Exception as e:
-        print(f"error message = {e}")
+        logger.warning(f"error message = {e}")
         st.error(f"I lost my way")
         return None
 
@@ -52,13 +35,14 @@ def process_question_and_display(question, prompt, cache):
 credentials = get_credentials()
 authenticator = stauth.Authenticate(
     credentials=credentials,
-    cookie_name='some_cookie_name',
-    key='some_signature_key',
+    cookie_name='cookie_name1',
+    key='key1234',
     cookie_expiry_days=1
 )
+
 cache = st.session_state.get('cache', False)
 
-name, authentication_status, username = authenticator.login('Login', 'main')
+name, authentication_status, username = authenticator.login('Login','main')
 st.session_state["authentication_status"] = authentication_status
 st.session_state["username"] = username
 
@@ -88,11 +72,7 @@ elif authentication_status is True:
     if 'question' not in st.session_state:
         st.session_state.question = ""
 
-    mic_clicked = st.button("🎤 Click to Speak")
-    if mic_clicked:
-        st.session_state.question = recognize_speech()
-
-    question = st.text_input("Transcribed Text", value=st.session_state.question, key="transcription_input")
+    question = st.text_input(label="input",value=st.session_state.question, key="transcription_input",placeholder="Ask question",label_visibility="hidden")
 
     if question:
         matching_suggestions = fetch_suggestions(question)
@@ -108,7 +88,7 @@ elif authentication_status is True:
         submit = st.button("Submit")
 
     if submit and question.strip():
-        df = process_question_and_display(question.strip(), prompt, False)
+        process_question_and_display(question.strip(), prompt, False)
 
     if 'selected_question' not in st.session_state:
         st.session_state.selected_question = None

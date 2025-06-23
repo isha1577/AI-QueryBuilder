@@ -4,8 +4,12 @@ import json
 import os
 import google.generativeai as genai
 import plotly.express as px
-from module.connection import update_fav, get_faq_id_by_question
+from sqlalchemy import Nullable
 
+from module.connection import update_fav, get_faq_id_by_question
+from logging_setup import setup_logger
+
+logger = setup_logger()
 st.set_page_config(page_title="Abner Chatboard", layout="wide")
 genai.configure(api_key="AIzaSyD42VSIy3Ts5XJKUfD8wOWysNUPrObWnUE")
 
@@ -19,6 +23,7 @@ def get_gemini_response(question, prompt):
     try:
         model = load_model()
         response = model.generate_content([prompt[0], question])
+        logger.info(response)
         return response.text
     except Exception as e:
         return f"Oops!! sorry I lost my way"
@@ -36,7 +41,8 @@ if os.path.exists(CACHE_FILE) and not st.session_state.chat_history:
         with open(CACHE_FILE, "r") as f:
             st.session_state.chat_history = json.load(f)
     except Exception as e:
-        st.warning(f"Failed to load cache: {e}")
+        logger.warning(f"error loading cache file {e}")
+        st.warning("load cache file")
 st.markdown(
     """
     <style>
@@ -83,7 +89,7 @@ Happy analyzing! 📊✨
 st.title("💬Chat with me")
 data_str = ""
 col1, col3, col2 = st.columns([1, 0.1, 1])
-with col1:
+with (col1):
     faq_id = ""
     if "question" in st.session_state:
         left, right = st.columns([1, 0.1])
@@ -120,7 +126,7 @@ with col1:
                         data_str = df.to_markdown(index=False)
                         df_prompt = df.to_csv(index=False)
                         if chat_more:
-                            print(chat_more)
+
                             prompt1 = [f"""Convert the asked question to a Pandas formula using ONLY this DataFrame: {df_prompt}
                                         Follow these rules strictly:
                                         Only return the Pandas formula
@@ -139,7 +145,7 @@ with col1:
                                         Answer: df[df['component_name'].str.contains('driver', case=False, na=False)].drop_duplicates()
                             """]
                             response = get_gemini_response(chat_more, prompt1)
-                            print(response)
+                            logger.info(response)
                             # pattern = r"```pandas\s*(.*?)\s*```"
                             # match = re.search(pattern, response, re.DOTALL)
                             match = response
@@ -148,9 +154,11 @@ with col1:
                                 code_to_execute = response
                                 try:
                                     result = eval(code_to_execute)
-                                    print(result)
                                 except Exception as e:
-                                    result = f"Error while executing code: {e}"
+                                    result = "Null"
+                                    logger.warning(f"Error while executing code: {e}")
+
+                            logger.info(result)
 
                             prompt2 = [f"""this is the question {chat_more} and this is the answer {result}"""]
                             ai_response = get_gemini_response("write answer properly", prompt2)
@@ -160,7 +168,7 @@ with col1:
 
                         if not df.empty and len(df.columns) >= 2 and len(df) > 1:
                             graph_type = st.radio("Choose a graph type:", ['Bar', 'Line', 'Scatter', 'Pie'])
-                            print(df.dtypes)
+                            logger.info(df.dtypes)
                             fig = None
                             if graph_type == 'Pie':
                                 object_columns = df.select_dtypes(include='object').columns
@@ -190,7 +198,7 @@ with col1:
                             else:
                                 st.warning("Please select valid X and Y axis columns to generate the graph.")
                         else:
-                            print("DataFrame is empty or doesn't have enough columns.")
+                            logger.info("DataFrame is empty or doesn't have enough columns.")
 
                     else:
                         st.write("No Data found")
@@ -200,7 +208,8 @@ with col1:
         else:
             st.write("cache file not present")
     except Exception as e:
-        st.error(f"Error generating response: {e}")
+        logger.warning(f"error streamlit in pages Deep view {e}")
+        st.error(f"No response")
 
 with col2:
     if st.button("Clear Chat"):
