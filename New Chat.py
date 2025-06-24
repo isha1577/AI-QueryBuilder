@@ -9,7 +9,6 @@ import streamlit_authenticator as stauth
 logger = setup_logger()
 
 
-
 def process_question_and_display(question, prompt, cache):
     try:
         del st.session_state['selected_question']
@@ -21,8 +20,8 @@ def process_question_and_display(question, prompt, cache):
             insert_or_increment_question(question.strip())
             st.session_state["question"] = question
             st.success("Data generated!")
-            st.sidebar.page_link("pages/Deep View.py", label="Calculator")
-            st.switch_page("pages/Deep View.py")
+            st.sidebar.page_link("pages/Detail View.py", label="Calculator")
+            st.switch_page("pages/Detail View.py")
         else:
             st.warning("No data found.")
             return None

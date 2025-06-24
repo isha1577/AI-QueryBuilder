@@ -47,20 +47,20 @@ st.markdown(
     """
     <style>
     section[data-testid='stSidebar'] {
-        width: 100px !important;
+        width: 250px !important;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
 st.sidebar.markdown("""
-Welcome to the **Abner Chatbot**! This application helps you interact with your database using simple language.
+Welcome to the **Abner Chatbot**! Interact with your database using simple language.
 
 ### 🔹 Step-by-Step Guide:
 
 1. **Ask a Question**
    - Type a business question like:
-     - *"What were the leads in March 2024?"*
+     - *"list down the leads in March 2024?"*
      - *"Show me the top 5 products by revenue."*
 
 2. **AI Response**
@@ -69,18 +69,14 @@ Welcome to the **Abner Chatbot**! This application helps you interact with your 
      - Display the **data output** from your database.
 
 3. **Ask Follow-up Questions**
-   - **Don't ask outside-database questions**  
-   - You can continue the conversation using follow-up questions like:
-     - *"What's the total growth rate in current month?"*
-     - *"Calculate the average order value."*
-
-4. **Interact with the Graphs**
-   - Change the x/y axis to the labels of your requirement
-   - display the graph as per your requirement
+   - **Don't ask outside-Table questions**  
+   - continue the conversation using follow-up questions like:
+     - *"How many leads have status Hot?"*
+     - *"Calculate the average revenue."*
 
 ---
 ### 🛠️ Pro Tip:
-Want the best results? Be **specific** and **data-oriented** in your questions.
+Be **specific** and **data-oriented** in your questions.
 
 
 Happy analyzing! 📊✨
@@ -212,13 +208,13 @@ with (col1):
         st.error(f"No response")
 
 with col2:
-    if st.button("Clear Chat"):
+    if st.button("Clear"):
         st.session_state.chat_history = []
         if os.path.exists(CACHE_FILE):
             os.remove(CACHE_FILE)
         st.success("Conversation ended and cache cleared.")
 
-    st.subheader("📝 Conversation")
+    st.subheader("📝Chat History")
 
     # Inject scrollable container styling
     st.markdown("""

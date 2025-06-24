@@ -21,9 +21,8 @@ def get_gemini_response(question, prompt):
 admin_prompt = """
 YOU ARE AN EXPERT. Just convert English questions to SQL queries.
 You are given a MySQL Community database with version 5.7 that has tables named
-poc_lead_quotation_summary_view (lead code ,quotation version code ,user ,user role ,user mobile ,total product price ,packaging cost ,transportation cost ,total cost ,quotation status ,quotation scope code ,lead stage ,category ,scope ,urgency ,product code ,product name ,retail price ,product quantity ,brand name ,created on)
-component_analysis_view (component id, component name, model number, oem id, threshold, lead time, tentative monthly consumption, active, auto enable, auto enable date, component created on, component created by, uantity warehouse location id, current stock quantity, supplier id, inward type, quantity created on, component outward details id, outward quantity, outward type, work order product component mapping id, outward created on, product code, product tag created on, material request quantity, material request returnable)
-
+poc_lead_quotation_summary_view (lead code, quotation version code, user, user role, user mobile, total product price, packaging cost, transportation cost, total cost, quotation status, quotation scope code ,lead stage, category, scope, urgency, product code, product name, retail price, product quantity, brand name, created on, delete flag, remaining quantity, product status, requested date, product delivery status, production remark, status modified on, work order id)
+component_analysis_view (component id, component name, model number, oem id, threshold, lead time, tentative monthly consumption, active, auto enable, auto enable date, component created on, user, quantity warehouse location id, current stock quantity, supplier id, inward type, quantity created on, component outward details id, outward quantity, outward type, work order product component mapping id, outward created on, product code, product tag created on, material request quantity, material request returnable)
 
 Follow these rules strictly:
 the sql code should not have ```sql in beginning and ``` in the end 
@@ -69,8 +68,9 @@ DONT USE ```sql in beginning and ``` in end
 user_prompt = """ 
 YOU ARE AN EXPERT. Just convert English questions to SQL queries.
 You are given a MySQL Community database with version 5.7 that has a view table named
-poc_lead_quotation_summary_view (lead code ,quotation version code ,user ,user role ,user mobile ,total product price ,packaging cost ,transportation cost ,total cost ,quotation status ,quotation scope code ,lead stage ,category ,scope ,urgency ,product code ,product name ,retail price ,product quantity ,brand name ,created on)
-component_analysis_view (component id, component name, model number, oem id, threshold, lead time, tentative monthly consumption, active, auto enable, auto enable date, component created on, user, uantity warehouse location id, current stock quantity, supplier id, inward type, quantity created on, component outward details id, outward quantity, outward type, work order product component mapping id, outward created on, product code, product name, product tag created on, material request quantity, material request returnable)
+poc_lead_quotation_summary_view (lead code, quotation version code, user, user role, user mobile, total product price, packaging cost, transportation cost, total cost, quotation status, quotation scope code ,lead stage, category, scope, urgency, product code, product name, retail price, product quantity, brand name, created on, delete flag, remaining quantity, product status, requested date, product delivery status, production remark, status modified on, work order id)
+component_analysis_view (component id, component name, model number, oem id, threshold, lead time, tentative monthly consumption, active, auto enable, auto enable date, component created on, user, quantity warehouse location id, current stock quantity, supplier id, inward type, quantity created on, component outward details id, outward quantity, outward type, work order product component mapping id, outward created on, product code, product tag created on, material request quantity, material request returnable)
+
 user name is {myname}
 Follow these rules strictly:
 the sql code should not have ```sql in beginning and ``` in the end 

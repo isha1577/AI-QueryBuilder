@@ -2,3 +2,13 @@ python-dotenv
 streamlit
 google-generativeai
 pandas
+streamlit-authenticator
+mysql-connector-python
+SQLAlchemy
+plotly
+PyMySQL
+numpy
+pillow
+blinker
+pyarrow
+tabulate
