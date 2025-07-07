@@ -8,7 +8,7 @@ username = "abneruser"
 password = "Abner%401234%24Secure"
 host = "13.232.218.220"
 port = 3306
-database = "abner_common"
+database = "prod_abner_db"
 
 engine = create_engine(f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}")
 
@@ -18,7 +18,7 @@ def get_connection():
     host="13.232.218.220",
     user="abneruser",
     password="Abner@1234$Secure",
-    database="abner_common",
+    database="prod_abner_db",
     port=3306
 )
 
@@ -100,7 +100,7 @@ def get_faq_id_by_question(question):
     return faq_id
 
 def fetch_data(sql):
-    # Use SQLAlchemy engine here for pandas compatibility
+
     dataframe = pd.read_sql(text(sql), con=engine)
     dataframe.to_csv("temp_df.csv", index=False)
     return dataframe
