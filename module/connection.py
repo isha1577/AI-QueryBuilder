@@ -3,22 +3,22 @@ import pandas as pd
 import os
 from sqlalchemy import create_engine, text
 
-username = "abneruser"
+username = "dev_ds_admin"
 # Encode special characters in the password
-password = "Abner%401234%24Secure"
-host = "13.232.218.220"
+password = "Nm7mIVc8OHxBv7WoIpo2"
+host = "dev-ds-abner-db.cn6koiyu8tn5.ap-south-1.rds.amazonaws.com"
 port = 3306
-database = "prod_abner_db"
+database = "dev-ds-abner-db"
 
 engine = create_engine(f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}")
 
 
 def get_connection():
     return mysql.connector.connect(
-    host="13.232.218.220",
-    user="abneruser",
-    password="Abner@1234$Secure",
-    database="prod_abner_db",
+    host="dev-ds-abner-db.cn6koiyu8tn5.ap-south-1.rds.amazonaws.com",
+    user="dev_ds_admin",
+    password="Nm7mIVc8OHxBv7WoIpo2",
+    database="dev-ds-abner-db",
     port=3306
 )
 
