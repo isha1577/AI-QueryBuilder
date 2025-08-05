@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 import streamlit as st
 load_dotenv()
-genai.configure(api_key="AIzaSyDd1r_-qpi8k821zKwIwQpO4RiaXQdUmTY")
+genai.configure(api_key="AIzaSyDMhs-8j9ZblyimVkeuJpizW-KqxDa3J2Y")
 
 
 def load_model():

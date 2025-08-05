@@ -10,7 +10,7 @@ from logging_setup import setup_logger
 
 logger = setup_logger()
 st.set_page_config(page_title="Abner Chatboard", layout="wide")
-genai.configure(api_key="AIzaSyDd1r_-qpi8k821zKwIwQpO4RiaXQdUmTY")  # Replace with your valid API key
+genai.configure(api_key="AIzaSyDMhs-8j9ZblyimVkeuJpizW-KqxDa3J2Y")  # Replace with your valid API key
 
 CACHE_FILE = "chat_cache.json"
 
