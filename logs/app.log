@@ -1,0 +1,130 @@
+2025-08-06 11:38:39,587 - INFO - Error message = 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. [violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"
+  quota_id: "GenerateContentInputTokensPerModelPerMinute-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-1.5-pro"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-1.5-pro"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-1.5-pro"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+, links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, retry_delay {
+  seconds: 20
+}
+]
+2025-08-06 11:38:40,124 - WARNING - error message = (pymysql.err.ProgrammingError) (1064, "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'Error message = 429 You exceeded your current quota, please check your plan and ' at line 1")
+[SQL: Error message = 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. [violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count"
+  quota_id: "GenerateContentInputTokensPerModelPerMinute-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-1.5-pro"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-1.5-pro"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-1.5-pro"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+}
+, links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, retry_delay {
+  seconds: 20
+}
+]]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-08-06 11:44:51,914 - INFO - SELECT `u user name` AS user_name, `lt urgency` AS lead_urgency, COUNT(DISTINCT `lt lead code`) AS total_leads FROM ds_view_lead_quotation_product GROUP BY `u user name`, `lt urgency`;
+
+2025-08-06 11:46:58,372 - INFO - SELECT `lt urgency`, COUNT(*) AS total_leads FROM ds_view_lead_quotation_product WHERE `lt urgency` IN ('Hot', 'Cold', 'Warm') GROUP BY `lt urgency`;
+
+2025-08-06 11:57:57,015 - INFO - SELECT ROUND(COUNT(DISTINCT CASE WHEN `qv status` = 'Finalized' THEN `qv quotation version code` ELSE NULL END) / COUNT(DISTINCT `qv quotation version code`), 2) AS quotation_to_finalization_ratio FROM ds_view_lead_quotation_product;
+
+2025-08-06 12:03:13,131 - INFO - SELECT `lt urgency` AS lead_urgency, COUNT(DISTINCT `lt lead code`) AS total_leads FROM ds_view_lead_quotation_product WHERE `lt urgency` IN ('Hot', 'Cold', 'Warm') GROUP BY `lt urgency`;
+
+2025-08-06 12:03:27,168 - INFO - SELECT `lt urgency`, COUNT(DISTINCT `lt lead code`) AS total_leads FROM ds_view_lead_quotation_product WHERE `lt urgency` IN ('Hot', 'Cold', 'Warm') GROUP BY `lt urgency`;
+
+2025-08-06 12:03:38,520 - INFO - SELECT `lt urgency`, COUNT(DISTINCT `lt lead code`) AS total_leads FROM ds_view_lead_quotation_product WHERE `lt urgency` IN ('Hot', 'Cold', 'Warm') GROUP BY `lt urgency`;
+
+2025-08-06 12:11:24,727 - INFO - SELECT `qv kam user` AS kam_user, COUNT(DISTINCT `qv quotation version code`) AS finalized_quotations FROM ds_view_lead_quotation_product WHERE `qv status` = 'Finalized' GROUP BY `qv kam user` ORDER BY finalized_quotations DESC;
+
+2025-08-06 12:27:00,439 - INFO - SELECT DISTINCT `component name`, `auto enable date` FROM ds_view_components WHERE `auto enable` = 'Yes';
+
+2025-08-07 13:30:00,845 - INFO - SELECT DISTINCT `component name`, `threshold`, `current stock quantity`, `quantity warehouse location id` AS warehouse_location
+FROM ds_view_components
+WHERE `current stock quantity` < `threshold`;
+
+2025-08-07 13:30:10,624 - INFO - SELECT ROUND(COUNT(DISTINCT CASE WHEN `qv status` = 'Finalized' THEN `qv quotation version code` ELSE NULL END) / COUNT(DISTINCT `q quotation code`), 2) AS quotation_to_finalization_ratio FROM ds_view_lead_quotation_product;
+
+2025-08-07 13:30:18,958 - INFO - SELECT `component name`, COUNT(DISTINCT `work order product component mapping id`) AS total_work_orders FROM ds_view_components GROUP BY `component name` ORDER BY total_work_orders DESC;
+
+2025-08-11 17:56:13,968 - INFO - SELECT DISTINCT `component name`, `quantity warehouse location id` AS `warehouse_location`, `current stock quantity` AS `current_stock`, `threshold` FROM ds_view_components WHERE `current stock quantity` < `threshold`;
+
+2025-08-11 17:56:27,767 - INFO - SELECT `lead urgency` AS `lead_urgency`, COUNT(DISTINCT `lead code`) AS `total_leads` FROM ds_abner_insights WHERE `lead urgency` IN ('Hot', 'Cold', 'Warm') GROUP BY `lead urgency`;
+
+2025-08-11 17:56:27,793 - WARNING - error message = (pymysql.err.OperationalError) (1054, "Unknown column 'lead urgency' in 'field list'")
+[SQL: SELECT `lead urgency` AS `lead_urgency`, COUNT(DISTINCT `lead code`) AS `total_leads` FROM ds_abner_insights WHERE `lead urgency` IN ('Hot', 'Cold', 'Warm') GROUP BY `lead urgency`;
+]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-08-11 18:07:00,490 - INFO - SELECT `lead urgency` AS lead_urgency, COUNT(DISTINCT `lead code`) AS total_leads FROM ds_abner_insights WHERE `lead urgency` IN ('Hot', 'Cold', 'Warm') GROUP BY `lead urgency`;
+
+2025-08-11 18:07:09,160 - INFO - SELECT `quantity warehouse location id` AS `warehouse_location`, SUM(`current stock quantity`) AS `total_inventory` FROM ds_view_components GROUP BY `quantity warehouse location id` ORDER BY `total_inventory` DESC LIMIT 1;
+
+2025-08-11 18:07:18,315 - INFO - SELECT COUNT(DISTINCT `lead code`) AS `active_leads_with_quotations` FROM ds_abner_insights WHERE `lead status` = 'ACTIVE' AND `quotation code` IS NOT NULL;
+
+2025-08-11 18:07:25,324 - INFO - SELECT COUNT(DISTINCT `lead code`) AS `active_leads_with_quotations` FROM ds_abner_insights WHERE `lead status` = 'ACTIVE' AND `quotation code` IS NOT NULL;
+
