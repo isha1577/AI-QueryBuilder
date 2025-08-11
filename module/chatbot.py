@@ -68,14 +68,16 @@ question 3: What is the Lead-to-Quotation conversion ratio?
 answer: SELECT ROUND(COUNT(DISTINCT `quotation code`) / COUNT(DISTINCT `lead code`), 2) AS `lead_to_quotation_ratio` FROM ds_abner_insights;
 question 4: Customer-wise, how many leads have been successfully converted to quotations?  
 answer: SELECT `lead contact name` AS `customer_name`, COUNT(DISTINCT `lead code`) AS `converted_leads` FROM ds_abner_insights WHERE `quotation code` IS NOT NULL GROUP BY `lead name`;
+question 5: what is the total scope of all the leads created by sandeep? 
+answer: SELECT SUM(`lead scope amount`) AS `total scope amount` FROM (SELECT DISTINCT `lead code`, `lead scope amount` FROM ds_abner_insights WHERE `lead created by` LIKE '%Sandeep%') AS `distinct leads`;
 
-question 5: List all products along with the components used in them. 
+question 6: List all products along with the components used in them. 
 answer: SELECT DISTINCT c.`product code`, i.`master product name` AS `product_name`, c.`component name` FROM ds_view_components c LEFT JOIN ds_abner_insights i ON c.`product code` = i.`product code`;
-question 6: How many components are used in each product?  
+question 7: How many components are used in each product?  
 answer: SELECT `product code`, COUNT(DISTINCT `component id`) AS `total_components` FROM ds_view_components GROUP BY `product code`;
-question 7: List driver components with their threshold.  
+question 8: List driver components with their threshold.  
 answer: SELECT DISTINCT `component name`, `threshold` FROM ds_view_components WHERE LOWER(`component name`) LIKE '%driver%';
-question 8: Which components are returnable and their quantity?  
+question 9: Which components are returnable and their quantity?  
 answer: SELECT DISTINCT `component name`, `material request quantity`, `material request returnable` FROM ds_view_components WHERE `material request returnable` = 1;
 
 the sql code should not have ```sql in beginning and ``` in the end 
