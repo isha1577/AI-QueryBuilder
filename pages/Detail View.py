@@ -175,11 +175,12 @@ with col1:
                         Do NOT provide explanation.
                         Do NOT use ``` in the begining or ending
                         DataFrame is called df.
+                        the flow of the CRM starts with making a lead adding quotation that have multiple scopes with inside multiple versions that are mapped with products and components and so the quotation is finalized for a lead
                         Examples:
-                        Q: how many leads are cold? → A: df[df['urgency'] == 'Cold'].shape[0]
-                        Q: list top 3 products → A: df.nlargest(3, 'total revenue')['product name'].tolist()
-                        Q: give component names with threshold → A: df[['component name', 'threshold']].drop_duplicates()
-                        Q: list down types of driver → A: df[df['component_name'].str.contains('driver', case=False, na=False)].drop_duplicates()
+                        Q: how many leads are cold? → Ans: df[df['urgency'] == 'Cold'].shape[0]
+                        Q: list top 3 products → Ans: df.nlargest(3, 'total revenue')['product name'].tolist()
+                        Q: give component names with threshold → Ans: df[['component name', 'threshold']].drop_duplicates()
+                        Q: list down types of driver → Ans: df[df['component_name'].str.contains('driver', case=False, na=False)].drop_duplicates()
                         """
                         response = get_gemini_response(chat_more, prompt1)
 
@@ -192,7 +193,10 @@ with col1:
                         logger.info(result)
 
                         prompt2 = f"This is the question: {chat_more}, and this is the answer: {result}"
-                        ai_response = get_gemini_response("write answer like talking to an business person use rupees for money values ", prompt2)
+                        ai_response = get_gemini_response("""write short answer    
+                        the flow of the CRM starts with making a lead adding quotation that have multiple scopes with inside multiple versions that are mapped with products and components and so the quotation is finalized for a lead
+                          use RUPEES for money values and units for stock o product  """, prompt2)
+
 
                         st.session_state.chat_history.insert(0, {"user": chat_more, "response": ai_response})
 
