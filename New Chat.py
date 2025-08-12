@@ -16,6 +16,7 @@ def process_question_and_display(question, prompt, cache):
         logger.info(generated_sql)
 
         df = fetch_data(generated_sql)
+        st.write(generated_sql)
         if df is not None and not df.empty:
             insert_or_increment_question(question.strip())
             st.session_state["question"] = question

@@ -35,6 +35,7 @@ def process_question_and_display(chat_more, prompt, cache):
         generated_sql = get_gemini_response(chat_more, prompt)
         logger.info(generated_sql)
         df = fetch_data(generated_sql)
+        st.write(generated_sql)
 
         if df is not None and not df.empty:
             insert_or_increment_question(chat_more)
