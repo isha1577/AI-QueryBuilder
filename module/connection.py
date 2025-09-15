@@ -8,7 +8,7 @@ username = "dev_ds_admin"
 password = "Nm7mIVc8OHxBv7WoIpo2"
 host = "dev-ds-abner-db.cn6koiyu8tn5.ap-south-1.rds.amazonaws.com"
 port = 3306
-database = "dev-ds-abner-db"
+database = "abner_erp_dev"
 
 engine = create_engine(f"mysql+pymysql://{username}:{password}@{host}:{port}/{database}")
 
@@ -18,7 +18,7 @@ def get_connection():
     host="dev-ds-abner-db.cn6koiyu8tn5.ap-south-1.rds.amazonaws.com",
     user="dev_ds_admin",
     password="Nm7mIVc8OHxBv7WoIpo2",
-    database="dev-ds-abner-db",
+    database="abner_erp_dev",
     port=3306
 )
 
