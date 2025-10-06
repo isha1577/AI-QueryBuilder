@@ -16,7 +16,7 @@ def process_question_and_display(question, prompt, cache):
         logger.info(generated_sql)
 
         df = fetch_data(generated_sql)
-        st.write(generated_sql)
+        # st.write(generated_sql)
         if df is not None and not df.empty:
             insert_or_increment_question(question.strip())
             st.session_state["question"] = question
@@ -72,14 +72,26 @@ elif authentication_status is True:
     if 'question' not in st.session_state:
         st.session_state.question = ""
 
-    question = st.text_input(label="input",value=st.session_state.question, key="transcription_input",placeholder="Ask question",label_visibility="hidden")
+    question = st.text_input(
+        label="input",
+        value=st.session_state.question,
+        key="transcription_input",
+        placeholder="Ask question",
+        label_visibility="hidden",
+    )
 
     if question:
         matching_suggestions = fetch_suggestions(question)
-        if matching_suggestions:
-            for item in matching_suggestions:
-                if st.button(item, key=f"select_{item}"):
-                    st.session_state.question = item
+        try:
+            if matching_suggestions:
+                # ✅ remove duplicates while preserving order
+                unique_suggestions = list(dict.fromkeys(matching_suggestions))
+
+                for idx, item in enumerate(unique_suggestions):
+                    if st.button(item, key=f"select_{idx}"):
+                        st.session_state.question = item
+                        st.session_state.transcription_input = item  # keep text_input synced
+        except: pass
 
     col1, col2 = st.columns([1, 0.1])
     faq_id = ""

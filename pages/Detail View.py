@@ -4,7 +4,12 @@ import json
 import os
 import plotly.express as px
 import google.generativeai as genai
-from module.connection import (insert_or_increment_question, update_fav, fetch_data, get_faq_id_by_question)
+from module.connection import (
+    insert_or_increment_question,
+    update_fav,
+    fetch_data,
+    get_faq_id_by_question
+)
 from module.chatbot import get_gemini_response, admin_prompt
 from logging_setup import setup_logger
 
@@ -13,6 +18,7 @@ st.set_page_config(page_title="Abner Chatboard", layout="wide")
 genai.configure(api_key="AIzaSyDMhs-8j9ZblyimVkeuJpizW-KqxDa3J2Y")  # Replace with your valid API key
 
 CACHE_FILE = "chat_cache.json"
+
 
 @st.cache_resource
 def load_model():
@@ -35,7 +41,6 @@ def process_question_and_display(chat_more, prompt, cache):
         generated_sql = get_gemini_response(chat_more, prompt)
         logger.info(generated_sql)
         df = fetch_data(generated_sql)
-        st.write(generated_sql)
 
         if df is not None and not df.empty:
             insert_or_increment_question(chat_more)
@@ -46,6 +51,7 @@ def process_question_and_display(chat_more, prompt, cache):
     except Exception as e:
         logger.warning(f"Error processing question: {e}")
         st.error("I lost my way.")
+
 
 def display_summary_and_graph(df):
     try:
@@ -129,116 +135,52 @@ Happy analyzing! 📊
 st.title("💬 Chat with me")
 col1, col3, col2 = st.columns([1, 0.1, 1])
 
-with col1:
-    faq_id = ""
-    if "question" in st.session_state:
-        left, right = st.columns([1, 0.1])
-        with left:
-            st.markdown(f"###### Q. {st.session_state['question']}")
-        with right:
-            if st.button("❤️", help="Add to favorites"):
-                faq_id = get_faq_id_by_question(st.session_state['question'])
-                update_fav(faq_id, True)
-                st.success("Added to favorites!")
-                st.rerun()
+# faq_id = ""
+if "question" not in st.session_state:
+    st.session_state["question"] = ""
+    #
+    # with left:
+    #     print(f"{st.session_state['question']}")
+    # with right:
+    #     if st.button("", help="Add to favorites"):
+    #         faq_id = get_faq_id_by_question(st.session_state['question'])
+    #         update_fav(faq_id, True)
+    #         print(f"{faq_id} added to favorites.")
+    #         st.success("Added to favorites!")
+    #         st.rerun()
 
-    toggle_state = st.toggle("New Chat")
-    chat_more = st.chat_input("Ask a follow-up question")
+chat_more = st.chat_input("Ask a follow-up question")
 
-    if toggle_state:
-        if chat_more:
-            process_question_and_display(chat_more, admin_prompt, False)
-            st.write(f"Q. {chat_more}")
-        else:
-            logger.info("Please enter a question ⭐")
+if chat_more:
+    # store only the latest question
+    st.session_state['question'] = chat_more
+    st.markdown(f"Q. {st.session_state['question']}")
 
-    try:
-        if not os.path.exists(CACHE_FILE):
-            with open(CACHE_FILE, "w") as f:
-                json.dump([], f)
+    process_question_and_display(st.session_state['question'], admin_prompt, False)
+else:
+    st.markdown(f"Q. {st.session_state['question']}")
+    logger.info("Please enter a question ⭐")
 
-        if os.path.exists("temp_df.csv"):
-            df = pd.read_csv("temp_df.csv")
+try:
+    if not os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE, "w") as f:
+            json.dump([], f)
 
-            if not df.empty:
-                if df.shape == (1, 1):
-                    col_name = df.columns[0]
-                    for value in df[col_name]:
-                        st.code(f"{col_name}  : {value}")
-                else:
-                    st.dataframe(df)
-                    display_summary_and_graph(df)
-                    df_prompt = df.to_csv(index=False)
-                    if chat_more and not toggle_state:
-                        # Gemini prompt to convert to pandas code
-                        prompt1 = f"""Convert the asked question to a Pandas formula using ONLY this DataFrame: {df_prompt}
-                        Only return the Pandas formula.
-                        Do NOT provide explanation.
-                        Do NOT use ``` in the begining or ending
-                        DataFrame is called df.
-                        the flow of the CRM starts with making a lead adding quotation that have multiple scopes with inside multiple versions that are mapped with products and components and so the quotation is finalized for a lead
-                        Examples:
-                        Q: how many leads are cold? → Ans: df[df['urgency'] == 'Cold'].shape[0]
-                        Q: list top 3 products → Ans: df.nlargest(3, 'total revenue')['product name'].tolist()
-                        Q: give component names with threshold → Ans: df[['component name', 'threshold']].drop_duplicates()
-                        Q: list down types of driver → Ans: df[df['component_name'].str.contains('driver', case=False, na=False)].drop_duplicates()
-                        """
-                        response = get_gemini_response(chat_more, prompt1)
+    if os.path.exists("temp_df.csv"):
+        df = pd.read_csv("temp_df.csv")
 
-                        try:
-                            result = eval(response)
-                        except Exception as e:
-                            result = "Null"
-                            logger.warning(f"Code execution error: {e}")
-
-                        logger.info(result)
-
-                        prompt2 = f"This is the question: {chat_more}, and this is the answer: {result}"
-                        ai_response = get_gemini_response("""write short answer    
-                        the flow of the CRM starts with making a lead adding quotation that have multiple scopes with inside multiple versions that are mapped with products and components and so the quotation is finalized for a lead
-                          use RUPEES for money values and units for stock o product  """, prompt2)
-
-
-                        st.session_state.chat_history.insert(0, {"user": chat_more, "response": ai_response})
-
-                        with open(CACHE_FILE, "w") as f:
-                            json.dump(st.session_state.chat_history, f, indent=2)
+        if not df.empty:
+            if df.shape == (1, 1):
+                col_name = df.columns[0]
+                for value in df[col_name]:
+                    st.code(f"{col_name}  : {value}")
             else:
-                st.write("No data found.")
+                st.dataframe(df)
+                display_summary_and_graph(df)
         else:
-            st.write("Upload or generate data first.")
-    except Exception as e:
-        logger.warning(f"Streamlit rendering error: {e}")
-        st.error("Failed to display output.")
-
-# --- Chat History + Clear Button ---
-with col2:
-    if st.button("Clear"):
-        st.session_state.chat_history = []
-        if os.path.exists(CACHE_FILE):
-            os.remove(CACHE_FILE)
-        st.success("Conversation and cache cleared.")
-
-    st.subheader("📝 Chat History")
-
-    # Scrollable chat history UI
-    st.markdown("""
-    <style>
-        .scroll-box {
-            height: 850px;
-            overflow-y: scroll;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-        }
-        .user-msg { font-weight: bold; margin-bottom: 4px; }
-        .bot-msg { margin-bottom: 16px; }
-    </style>
-    """, unsafe_allow_html=True)
-
-    chat_html = '<div class="scroll-box"><p><strong>👋 HEY THERE !!</strong></p>'
-    for msg in st.session_state.chat_history:
-        chat_html += f'<div class="user-msg">🤓 ME: {msg["user"]}</div>'
-        chat_html += f'<div class="bot-msg">🤖 BOT: {msg["response"]}</div>'
-    chat_html += '</div>'
-    st.markdown(chat_html, unsafe_allow_html=True)
+            st.write("No data found.")
+    else:
+        st.write("Upload or generate data first.")
+except Exception as e:
+    logger.warning(f"Streamlit rendering error: {e}")
+    st.error("Failed to display output.")
