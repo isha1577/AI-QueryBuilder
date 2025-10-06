@@ -6,7 +6,7 @@ genai.configure(api_key="AIzaSyDMhs-8j9ZblyimVkeuJpizW-KqxDa3J2Y")
 
 
 def load_model():
- return genai.GenerativeModel('models/gemini-1.5-pro')
+ return genai.GenerativeModel('models/gemini-2.5-flash')
 
 
 def get_gemini_response(question, prompt):
