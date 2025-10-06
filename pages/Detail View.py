@@ -16,7 +16,7 @@ CACHE_FILE = "chat_cache.json"
 
 @st.cache_resource
 def load_model():
-    return genai.GenerativeModel('models/gemini-1.5-pro-latest')
+    return genai.GenerativeModel('models/gemini-2.5-flash')
 
 
 def get_gemini_response(question, prompt):
